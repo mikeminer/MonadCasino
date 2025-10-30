@@ -1,4 +1,4 @@
-🎰 Monad Casino
+🎰 Monad Casino by pappardelle.eth ( 0x5d69c42a3a481d0ccfd88cfa8a2a08e2bf456134 ) 
 The On-Chain Slot Machine on Monad Testnet - dapp link https://mikeminer.github.io/MonadCasino/
 
 Welcome to Monad Casino, a neon-soaked one-page dApp where every pull of the lever is a real blockchain transaction.
