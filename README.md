@@ -1,5 +1,5 @@
 🎰 Monad Casino
-The On-Chain Slot Machine on Monad Testnet
+The On-Chain Slot Machine on Monad Testnet - dapp link https://mikeminer.github.io/MonadCasino/
 
 Welcome to Monad Casino, a neon-soaked one-page dApp where every pull of the lever is a real blockchain transaction.
 Select a deployed contract, connect your wallet, spin the reels, and settle on-chain with glorious finality.
