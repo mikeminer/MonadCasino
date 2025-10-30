@@ -222,7 +222,7 @@
     const toast = (msg)=>{ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2600); };
 
     // ====== Wallet state ======
-    let provider, signer, contract;
+    let provider, signer, contract; // provider = BrowserProvider, signer = JsonRpcSigner
 
     // Populate dropdown
     function populateContracts(){
@@ -260,21 +260,21 @@
 
     btnConnect.onclick = async ()=>{
       if(!window.ethereum){ toast('No wallet found. Try MetaMask / Rabby / Backpack EVM.'); return; }
-      provider = new ethers.BrowserProvider(window.ethereum);
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      await initProviderAndSigner();
       await ensureMonad();
-      signer = await provider.getSigner();
+      await initProviderAndSigner(); // refresh after possible network switch
       btnConnect.textContent = '✅ Connected';
       tryInitContract();
       pollStats();
     };
 
-    btnSwitch.onclick = async ()=>{ await ensureMonad(true); };
+    btnSwitch.onclick = async ()=>{ await ensureMonad(true); await initProviderAndSigner(); tryInitContract(); };
 
     async function ensureMonad(forceAdd=false){
       if(!window.ethereum) return false;
-      let chainId = null; try{ chainId = await provider?.send('eth_chainId', []);}catch{}
-      if(chainId === MONAD.chainIdHex){ return true; }
+      // use the raw provider to query chain id; BrowserProvider may be stale after a switch
+      let currentChainId = await window.ethereum.request({ method: 'eth_chainId' }).catch(()=>null);
+      if(currentChainId === MONAD.chainIdHex){ return true; }
       try{
         await window.ethereum.request({ method:'wallet_switchEthereumChain', params:[{ chainId: MONAD.chainIdHex }] });
       }catch(err){
@@ -288,7 +288,20 @@
       return true;
     }
 
+    async function initProviderAndSigner(){
+      provider = new ethers.BrowserProvider(window.ethereum);
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      signer = await provider.getSigner();
+    }
+
     function tryInitContract(){
+      const addr = contractAddrInput.value.trim();
+      if(!ethers.isAddress(addr)){ btnSpin.disabled = true; contract = null; return; }
+      if(!signer) return;
+      contract = new ethers.Contract(addr, ABI, signer); // IMPORTANT: connect with signer, not provider
+      btnSpin.disabled = false; toast('Machine armed. Try your luck.');
+      subscribeEvents(); pollStats();
+    }
       const addr = contractAddrInput.value.trim();
       if(!ethers.isAddress(addr)){ btnSpin.disabled = true; contract = null; return; }
       if(!provider) return;
@@ -344,9 +357,8 @@
 
     // ====== Stats polling ======
     async function pollStats(){
-      if(!contract) return;
+      if(!contract || !signer) return;
       try{
-        const signer = await provider.getSigner();
         const addr = await signer.getAddress();
         const [tot, me, cd, last, tips] = await Promise.all([
           contract.totalPresses(), contract.presses(addr), contract.cooldownSeconds(), contract.lastPressAt(addr), contract.tipsBalance()
@@ -360,15 +372,35 @@
         cooldownEl.textContent = `cooldown: ${cd}s`;
         btnSpin.disabled = left>0;
       }catch(e){ /* ignore until connected */ }
+    } MON`;
+        const now = Math.floor(Date.now()/1000);
+        const left = Math.max(0, Number(last) + Number(cd) - now);
+        timeLeftEl.textContent = left ? `${left}s` : 'Ready';
+        cooldownEl.textContent = `cooldown: ${cd}s`;
+        btnSpin.disabled = left>0;
+      }catch(e){ /* ignore until connected */ }
     }
     setInterval(pollStats, 3000);
 
     // ====== Event sub ======
     function subscribeEvents(){
       if(!contract) return;
+      contract.removeAllListeners?.('Pressed');
       contract.on('Pressed', (user, total, userPresses, message, tip, ev)=>{
         confetti();
         toast(`Live: ${short(user)} spun — total ${total}`);
+      });
+      // wallet & chain listeners
+      if(window.ethereum){
+        window.ethereum.removeListener?.('accountsChanged', handleAcctChange);
+        window.ethereum.removeListener?.('chainChanged', handleChainChange);
+        window.ethereum.on?.('accountsChanged', handleAcctChange);
+        window.ethereum.on?.('chainChanged', handleChainChange);
+      }
+    }
+
+    async function handleAcctChange(){ await initProviderAndSigner(); tryInitContract(); pollStats(); }
+    async function handleChainChange(){ await initProviderAndSigner(); tryInitContract(); pollStats(); } spun — total ${total}`);
       });
     }
 
@@ -383,7 +415,13 @@
 
     // Auto setup
     populateContracts();
-    if(window.ethereum){ provider = new ethers.BrowserProvider(window.ethereum); provider.listAccounts().then(accs=>{ if(accs?.length){ btnConnect.click(); } }); }
+    if(window.ethereum){
+      initProviderAndSigner().then(()=>{
+        window.ethereum.request({ method: 'eth_accounts' }).then(accs=>{ if(accs?.length){ btnConnect.textContent='✅ Connected'; tryInitContract(); pollStats(); } });
+      }).catch(()=>{});
+    }
   </script>
+</body>
+</html>  </script>
 </body>
 </html>
