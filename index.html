@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🎰 Monad Casino — The On‑Chain Slot</title>
+  <meta name="description" content="A neon‑soaked, one‑page slot machine frontend for BigButton on Monad Testnet. Pull the lever. Trust the finality." />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <style>
+    :root{
+      --bg:#060915; --ink:#f8fbff; --muted:#b4c0df; --panel:#0e183a; --deep:#0a122d;
+      --neon1:#ff3b8d; --neon2:#50e3a4; --neon3:#8bd3ff; --neon4:#ffd166; --edge:#1a2556; --err:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial; color:var(--ink);
+      background:
+        radial-gradient(1200px 600px at 80% -10%, #1f2e72 0%, transparent 60%),
+        radial-gradient(1000px 500px at 15% 0%, #43186b 0%, transparent 60%),
+        linear-gradient(180deg, #070c1a, #0b1026 60%, #070c1a);
+    }
+    header{position:sticky; top:0; z-index:3; backdrop-filter: blur(10px); background: rgba(7,12,26,.6); border-bottom:1px solid #20306e}
+    .bar{max-width:1100px; margin:0 auto; padding:14px 18px; display:flex; gap:14px; align-items:center; justify-content:space-between}
+    .title{display:flex; align-items:center; gap:12px}
+    h1{font-size:clamp(18px,3.2vw,28px); margin:0; letter-spacing:.4px}
+    .badge{background:linear-gradient(90deg,var(--neon3),var(--neon2)); color:#05131d; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:800}
+    .container{max-width:1100px; margin:0 auto; padding:22px; display:grid; gap:20px}
+
+    .casino{display:grid; gap:16px; grid-template-columns: 1.2fr .8fr; align-items:stretch}
+    .card{background: linear-gradient(180deg,#0e1840, #0b1334); border:1px solid var(--edge); border-radius:18px; padding:18px; box-shadow:0 8px 28px rgba(0,0,0,.38)}
+
+    /* SLOT MACHINE */
+    .slot{position:relative; display:grid; grid-template-columns: 1fr auto; gap:18px}
+    .slotbox{position:relative; background: #0b1434; border:2px solid #2a3777; border-radius:16px; padding:18px; display:grid; gap:14px; align-items:center; justify-items:center; box-shadow: inset 0 0 30px #091034}
+    .marquee{font-weight:900; letter-spacing:1px; font-size:14px; text-transform:uppercase; color:var(--muted)}
+    .reels{display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; width:100%;}
+    .reel{height:140px; border-radius:12px; border:1px solid #2b3a80; background:#0a1231; overflow:hidden; position:relative}
+    .window{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center}
+    .symbol{height:70px; display:grid; place-items:center; font-size:40px; text-shadow:0 2px 0 rgba(0,0,0,.4)}
+    .overlay{position:absolute; inset:0; background:linear-gradient(180deg, rgba(255,255,255,.08), transparent 30%, transparent 70%, rgba(0,0,0,.2)); pointer-events:none}
+
+    .lever{display:grid; grid-template-rows: auto 1fr auto; place-items:center; gap:12px}
+    .stick{width:10px; height:120px; background:linear-gradient(180deg,#c1c7ff,#6b7cff); border-radius:6px}
+    .ball{width:42px; height:42px; border-radius:999px; background:radial-gradient(circle at 30% 30%, #ff79c6, #b00066 70%); box-shadow:0 10px 28px rgba(255,64,160,.35); cursor:pointer}
+    .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 16px; border-radius:12px; border:1px solid #24306c; background:#11193a; color:#eaf3ff; cursor:pointer; font-weight:800}
+    .btn.primary{background: linear-gradient(90deg, var(--neon1), var(--neon3)); border-color:transparent; color:#02101a}
+    .btn.ghost{background:transparent}
+    .btn:disabled{opacity:.55; cursor:not-allowed}
+
+    .cool{position:absolute; top:14px; right:14px; background:#122055; color:#cfe4ff; padding:6px 10px; border-radius:10px; font-size:12px}
+
+    /* RIGHT PANEL */
+    .panel{display:grid; gap:14px}
+    label{font-size:12px; color:var(--muted)}
+    input[type="text"], input[type="number"], textarea, select{width:100%; background:#0a1231; border:1px solid #22306b; color:var(--ink); padding:10px 12px; border-radius:12px}
+    .row{display:flex; gap:10px; align-items:center}
+    .statgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px}
+    .stat{background:#0b1434; border:1px solid #1a2556; border-radius:14px; padding:12px}
+    .stat b{display:block; font-size:11px; color:var(--muted)}
+    .stat span{font-size: clamp(16px, 2.8vw, 24px); font-weight:800}
+    .foot{display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; color:var(--muted); font-size:12px}
+    a{color:var(--neon3)}
+
+    .ticker{white-space:nowrap; overflow:hidden; border-top:1px solid #1b2552; border-bottom:1px solid #1b2552; background:#0a1332}
+    .ticker .inner{display:inline-block; padding:8px 0; animation: slide 24s linear infinite}
+    @keyframes slide{ from{ transform: translateX(0)} to{ transform: translateX(-50%)} }
+
+    .toast{position:fixed; right:16px; bottom:16px; background:#0c1538; border:1px solid #21408b; padding:12px 14px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.4); display:none}
+    .toast.show{display:block}
+
+    .jackpot{position:absolute; left:50%; top:-10px; transform:translateX(-50%); background:linear-gradient(90deg,var(--neon4),var(--neon1)); color:#130a1d; padding:6px 14px; border-radius:999px; font-weight:900; box-shadow:0 0 30px rgba(255,200,0,.25); display:none}
+    .jackpot.show{display:block}
+
+    @media (max-width: 980px){ .casino{ grid-template-columns:1fr; } .statgrid{ grid-template-columns:1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <div class="title">
+        <h1>🎰 Monad Casino — <span style="opacity:.85">The On‑Chain Slot</span></h1>
+        <span class="badge">Monad Testnet</span>
+      </div>
+      <div class="row">
+        <button id="btnSwitch" class="btn ghost" title="Switch/Add Monad Testnet">↔️ Switch to Monad</button>
+        <button id="btnConnect" class="btn primary">🔌 Connect Wallet</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="casino">
+      <div class="card slot">
+        <div class="cool" id="cooldown">cooldown: —</div>
+        <div class="jackpot" id="jackpot">💥 JACKPOT! Finality Achieved 💥</div>
+        <div class="slotbox">
+          <div class="marquee">Spin the reels — settle on‑chain</div>
+          <div class="reels" id="reels">
+            <div class="reel"><div class="window" id="reel0"></div><div class="overlay"></div></div>
+            <div class="reel"><div class="window" id="reel1"></div><div class="overlay"></div></div>
+            <div class="reel"><div class="window" id="reel2"></div><div class="overlay"></div></div>
+          </div>
+        </div>
+        <div class="lever">
+          <div class="stick"></div>
+          <div class="ball" id="leverBall" title="Pull to spin"></div>
+          <button id="btnSpin" class="btn primary" disabled>🕹️ Pull Lever & Press</button>
+        </div>
+      </div>
+
+      <div class="card panel">
+        <div class="row">
+          <div style="flex:1">
+            <label>Select a deployed machine (same .sol)</label>
+            <select id="contractSelect"></select>
+          </div>
+          <button id="useSelected" class="btn" title="Use selected address">✅ Use Selected</button>
+        </div>
+        <div class="row">
+          <div style="flex:1">
+            <label>Or paste a custom address</label>
+            <input id="contractAddr" type="text" placeholder="0x…" />
+          </div>
+          <button id="saveAddr" class="btn" title="Save custom address">💾 Save</button>
+        </div>
+        <div class="row">
+          <div style="flex:1">
+            <label>Bet in MON (optional tip)</label>
+            <input id="tip" type="number" min="0" step="0.0001" placeholder="0.0" />
+          </div>
+          <div style="flex:1">
+            <label>Casino Shout (on‑chain message)</label>
+            <input id="message" type="text" placeholder="Hit the jackpot!" />
+          </div>
+        </div>
+        <div class="statgrid">
+          <div class="stat"><b>Total spins</b><span id="totalPresses">—</span></div>
+          <div class="stat"><b>Your spins</b><span id="yourPresses">—</span></div>
+          <div class="stat"><b>Next allowed in</b><span id="timeLeft">—</span></div>
+          <div class="stat"><b>Tips (bank)</b><span id="tipsBal">—</span></div>
+        </div>
+        <div class="foot">
+          <div id="lastTx">Place your bets responsibly. 🧪 Testnet only.</div>
+          <div>
+            <a id="addrLink" href="#" target="_blank" rel="noreferrer">View Contract</a> ·
+            <a href="https://testnet.monadexplorer.com/" target="_blank" rel="noreferrer">Explorer</a> ·
+            <a href="https://faucet.monad.xyz/" target="_blank" rel="noreferrer">Faucet</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ticker">
+      <div class="inner" id="ticker">
+        🎰 Tip: Three of a kind triggers JACKPOT confetti.  🕒 Cooldown prevents degenerate clicking.  🧪 Testnet only — bets are tips to the contract.  🚦 Finality is your friend. —
+        🎲 Symbols: 🍒 🍋 🔔 ⭐ 7️⃣ 💎 🐸  — Good luck, degen! —
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast">toasty</div>
+
+  <script type="module">
+    import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.min.js";
+
+    // ====== Network constants (Monad Testnet) ======
+    const MONAD = {
+      chainId: 10143,
+      chainIdHex: '0x279f',
+      name: 'Monad Testnet',
+      nativeCurrency: { name: 'Monad', symbol: 'MON', decimals: 18 },
+      rpcUrls: ['https://testnet-rpc.monad.xyz'],
+      blockExplorer: 'https://testnet.monadexplorer.com'
+    };
+
+    // ====== Provided contract list ======
+    const CONTRACTS = [
+      { label: 'Machine 1', addr: '0xe13b3F32F74b3E743a11a2ff09802f09d4590507' },
+      { label: 'Machine 2', addr: '0x335f7CdB18a5a97A0b7ca45b90259F30AC76018c' },
+      { label: 'Machine 3', addr: '0x12B935E6DD40bA7Ca36b0478cFC50Bed98b297c8' },
+      { label: 'Machine 4', addr: '0x89B32D4cd09559e2Ee9D0b86efe6f49e76b31BfD' },
+      { label: 'Machine 5', addr: '0x369C93465de307657095db22FEF416a369446874' },
+      { label: 'Machine 6', addr: '0x6238f423e47289822AAFB953069702c43b574b21' },
+      { label: 'Machine 7', addr: '0x634999f40d8Bb6d83d1B79c98a1a73E51Fd3247d' },
+      { label: 'Machine 8', addr: '0x2e15e935521E22d344B300E63ED4019E07A463Ab' },
+      { label: 'Machine 9', addr: '0xE6D77a6450D1d144C42a18FDc0a5F8f4AA602590' },
+    ];
+
+    // ====== Minimal ABI from your contract ======
+    const ABI = [
+      'function press(string message_) payable',
+      'function totalPresses() view returns (uint256)',
+      'function presses(address) view returns (uint256)',
+      'function cooldownSeconds() view returns (uint256)',
+      'function lastPressAt(address) view returns (uint256)',
+      'function tipsBalance() view returns (uint256)',
+      'event Pressed(address indexed user, uint256 totalPresses, uint256 userPresses, string message, uint256 tip)'
+    ];
+
+    // ====== Elements ======
+    const $ = (sel)=>document.querySelector(sel);
+    const reels = [$('#reel0'), $('#reel1'), $('#reel2')];
+    const btnSpin = $('#btnSpin');
+    const btnConnect = $('#btnConnect');
+    const btnSwitch = $('#btnSwitch');
+    const cooldownEl = $('#cooldown');
+    const timeLeftEl = $('#timeLeft');
+    const totalPressesEl = $('#totalPresses');
+    const yourPressesEl = $('#yourPresses');
+    const tipsBalEl = $('#tipsBal');
+    const lastTxEl = $('#lastTx');
+    const contractAddrInput = $('#contractAddr');
+    const contractSelect = $('#contractSelect');
+    const useSelectedBtn = $('#useSelected');
+    the_addrLink = $('#addrLink');
+    const saveAddrBtn = $('#saveAddr');
+    const messageInput = $('#message');
+    const tipInput = $('#tip');
+    const leverBall = $('#leverBall');
+    const jackpot = $('#jackpot');
+
+    const toast = (msg)=>{ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2600); };
+
+    // ====== Wallet state ======
+    let provider, signer, contract; // provider = BrowserProvider, signer = JsonRpcSigner
+
+    // Ensure we have a write-capable Contract
+    function writable(c){
+      if(!c) return null;
+      const hasSignerRunner = c.runner && typeof c.runner.sendTransaction === 'function';
+      return hasSignerRunner ? c : (signer ? c.connect(signer) : null);
+    }
+
+    // Populate dropdown
+    function populateContracts(){
+      contractSelect.innerHTML = '';
+      for(const c of CONTRACTS){
+        const opt = document.createElement('option');
+        opt.value = c.addr; opt.textContent = `${c.label} — ${short(c.addr)}`; contractSelect.appendChild(opt);
+      }
+      const saved = localStorage.getItem('bigbutton_addr');
+      if(saved){
+        contractAddrInput.value = saved;
+        const found = [...contractSelect.options].find(o=>o.value.toLowerCase()===saved.toLowerCase());
+        if(found) contractSelect.value = found.value;
+      } else {
+        contractAddrInput.value = CONTRACTS[0].addr;
+        contractSelect.value = CONTRACTS[0].addr;
+      }
+      updateAddrLink(contractAddrInput.value);
+    }
+
+    function setContractAddress(a){
+      if(!ethers.isAddress(a)){ toast('That address looks shy. Is it a valid 0x address?'); return false; }
+      contractAddrInput.value = a;
+      localStorage.setItem('bigbutton_addr', a);
+      updateAddrLink(a);
+      tryInitContract();
+      return true;
+    }
+
+    function updateAddrLink(a){ the_addrLink.href = `${MONAD.blockExplorer}/address/${a}`; }
+
+    useSelectedBtn.onclick = ()=>{ setContractAddress(contractSelect.value); };
+
+    saveAddrBtn.onclick = ()=>{ setContractAddress(contractAddrInput.value.trim()); };
+
+    btnConnect.onclick = async ()=>{
+      if(!window.ethereum){ toast('No wallet found. Try MetaMask / Rabby / Backpack EVM.'); return; }
+      await initProviderAndSigner();
+      await ensureMonad();
+      await initProviderAndSigner(); // refresh after possible network switch
+      btnConnect.textContent = '✅ Connected';
+      tryInitContract();
+      pollStats();
+    };
+
+    btnSwitch.onclick = async ()=>{ await ensureMonad(true); await initProviderAndSigner(); tryInitContract(); };
+
+    async function ensureMonad(forceAdd=false){
+      if(!window.ethereum) return false;
+      // raw provider (safer after switches)
+      let currentChainId = await window.ethereum.request({ method: 'eth_chainId' }).catch(()=>null);
+      if(currentChainId === MONAD.chainIdHex){ return true; }
+      try{
+        await window.ethereum.request({ method:'wallet_switchEthereumChain', params:[{ chainId: MONAD.chainIdHex }] });
+      }catch(err){
+        if(err.code === 4902 || forceAdd){
+          await window.ethereum.request({ method:'wallet_addEthereumChain', params:[{
+            chainId: MONAD.chainIdHex, chainName: MONAD.name, nativeCurrency: MONAD.nativeCurrency,
+            rpcUrls: MONAD.rpcUrls, blockExplorerUrls:[MONAD.blockExplorer]
+          }]});
+        } else { toast('Could not switch network.'); return false; }
+      }
+      return true;
+    }
+
+    async function initProviderAndSigner(){
+      provider = new ethers.BrowserProvider(window.ethereum);
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      signer = await provider.getSigner();
+    }
+
+    function tryInitContract(){
+      const addr = contractAddrInput.value.trim();
+      if(!ethers.isAddress(addr)){ btnSpin.disabled = true; contract = null; return; }
+      if(!signer) return;
+      contract = new ethers.Contract(addr, ABI, signer);
+      const c = writable(contract);
+      btnSpin.disabled = !c;
+      toast(c ? 'Machine armed. Try your luck.' : 'Read-only mode — connect wallet to play.');
+      subscribeEvents(); pollStats();
+    }
+
+    // ====== Spin logic ======
+    const SYMBOLS = ['🍒','🍋','🔔','⭐','7️⃣','💎','🐸'];
+    function renderReel(el, topSym, nextSym){
+      el.innerHTML = '';
+      const a = document.createElement('div'); a.className='symbol'; a.textContent = topSym; el.appendChild(a);
+      const b = document.createElement('div'); b.className='symbol'; b.textContent = nextSym; el.appendChild(b);
+      el.style.transition = 'none'; el.style.transform = 'translateY(0)';
+      requestAnimationFrame(()=>{
+        requestAnimationFrame(()=>{ el.style.transition = 'transform .6s cubic-bezier(.2,.7,.2,1)'; el.style.transform = 'translateY(-70px)'; });
+      });
+    }
+
+    function spinVisual(){
+      const res = [];
+      for(let i=0;i<3;i++){
+        const a = SYMBOLS[(Math.random()*SYMBOLS.length)|0];
+        const b = SYMBOLS[(Math.random()*SYMBOLS.length)|0];
+        res.push(b);
+        renderReel(reels[i], a, b);
+      }
+      const jack = res[0]===res[1] && res[1]===res[2];
+      if(jack){ jackpot.classList.add('show'); setTimeout(()=>jackpot.classList.remove('show'), 2500); confetti(); beep(660); }
+      else { beep(420); }
+      return { res, jack };
+    }
+
+    btnSpin.onclick = async ()=>{ await spinAndPress(); };
+    leverBall.onclick = async ()=>{ await spinAndPress(); };
+
+    async function spinAndPress(){
+      if(!contract){ toast('Select a machine first.'); return; }
+      const { jack } = spinVisual();
+      try{
+        const tip = tipInput.value ? ethers.parseEther(String(tipInput.value)) : 0n;
+        const msg = messageInput.value || (jack ? 'JACKPOT!' : 'Spin spin spin');
+        const c = writable(contract);
+        if(!c){ toast('Wallet not connected or signer missing.'); return; }
+        const tx = await c.press(msg, { value: tip });
+        lastTxEl.innerHTML = `Sent: <a target="_blank" rel="noreferrer" href="${MONAD.blockExplorer}/tx/${tx.hash}">view tx</a>`;
+        toast('Bet placed! Waiting for settlement…');
+        await tx.wait();
+        toast('Settled 🎉');
+        pollStats();
+      }catch(err){ console.error(err); toast(err?.shortMessage || err?.message || 'Spin failed'); }
+    }
+
+    // ====== Stats polling ======
+    async function pollStats(){
+      if(!contract || !signer) return;
+      try{
+        const addr = await signer.getAddress();
+        const [tot, me, cd, last, tips] = await Promise.all([
+          contract.totalPresses(), contract.presses(addr), contract.cooldownSeconds(), contract.lastPressAt(addr), contract.tipsBalance()
+        ]);
+        totalPressesEl.textContent = tot.toString();
+        yourPressesEl.textContent = me.toString();
+        tipsBalEl.textContent = `${ethers.formatEther(tips)} MON`;
+        const now = Math.floor(Date.now()/1000);
+        const left = Math.max(0, Number(last) + Number(cd) - now);
+        timeLeftEl.textContent = left ? `${left}s` : 'Ready';
+        cooldownEl.textContent = `cooldown: ${cd}s`;
+        btnSpin.disabled = left>0;
+      }catch(e){ /* ignore until connected */ }
+    }
+    setInterval(pollStats, 3000);
+
+    // ====== Event sub ======
+    function subscribeEvents(){
+      if(!contract) return;
+      contract.removeAllListeners?.('Pressed');
+      contract.on('Pressed', (user, total, userPresses, message, tip, ev)=>{
+        confetti();
+        toast(`Live: ${short(user)} spun — total ${total}`);
+      });
+      if(window.ethereum){
+        window.ethereum.removeListener?.('accountsChanged', handleAcctChange);
+        window.ethereum.removeListener?.('chainChanged', handleChainChange);
+        window.ethereum.on?.('accountsChanged', handleAcctChange);
+        window.ethereum.on?.('chainChanged', handleChainChange);
+      }
+    }
+
+    async function handleAcctChange(){ await initProviderAndSigner(); tryInitContract(); pollStats(); }
+    async function handleChainChange(){ await initProviderAndSigner(); tryInitContract(); pollStats(); }
+
+    // ====== Cute FX ======
+    function short(a){ return a.slice(0,6)+"…"+a.slice(-4); }
+    function beep(freq=420){ try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type='square'; o.frequency.value= freq; g.gain.value=.02; o.connect(g).connect(ctx.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime+.12); o.stop(ctx.currentTime+.13);}catch(e){} }
+
+    // confetti (DOM-based quickie)
+    function confetti(){
+      const n=60; for(let i=0;i<n;i++){ const s=document.createElement('div'); s.style.position='fixed'; s.style.left=(Math.random()*100)+'vw'; s.style.top='-10px'; s.style.width=s.style.height=(6+Math.random()*6)+'px'; s.style.background=['#8bd3ff','#ff3b8d','#50e3a4','#ffd166','#ffffff'][Math.floor(Math.random()*5)]; s.style.opacity='0.9'; s.style.zIndex='9999'; s.style.transform='rotate('+Math.random()*360+'deg)'; document.body.appendChild(s); const dur= 800+Math.random()*900; s.animate([{ transform:s.style.transform, top:'-10px'},{ transform:'rotate('+(Math.random()*720)+'deg)', top:'95vh'}],{ duration: dur, easing:'ease-in'}).onfinish=()=>s.remove(); }
+    }
+
+    // Auto setup
+    populateContracts();
+    if(window.ethereum){
+      initProviderAndSigner().then(()=>{
+        window.ethereum.request({ method: 'eth_accounts' }).then(accs=>{ if(accs?.length){ btnConnect.textContent='✅ Connected'; tryInitContract(); pollStats(); } });
+      }).catch(()=>{});
+    }
+  </script>
+</body>
+</html>
