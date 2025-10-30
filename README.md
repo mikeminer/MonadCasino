@@ -72,8 +72,8 @@ Wallet	Any EVM wallet supporting chain switching
 
 Clone the repo:
 
-git clone https://github.com/<YOUR_USERNAME>/monad-casino.git
-cd monad-casino
+git clone https://github.com/mikeminer/monadcasino.git
+cd monadcasino
 
 
 Just open index.html in your browser — no server needed ✅
