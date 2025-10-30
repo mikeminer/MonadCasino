@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>🎰 Monad Casino — The On‑Chain Slot</title>
-  <meta name="description" content="A neon‑soaked, one‑page slot machine frontend for BigButton on Monad Testnet. Pull the lever. Trust the finality." />
+  <title>🎰 Monad Casino — The On-Chain Slot</title>
+  <meta name="description" content="A neon-soaked, one-page slot machine frontend for BigButton on Monad Testnet. Pull the lever. Trust the finality." />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <style>
     :root{
@@ -78,7 +78,7 @@
   <header>
     <div class="bar">
       <div class="title">
-        <h1>🎰 Monad Casino — <span style="opacity:.85">The On‑Chain Slot</span></h1>
+        <h1>🎰 Monad Casino — <span style="opacity:.85">The On-Chain Slot</span></h1>
         <span class="badge">Monad Testnet</span>
       </div>
       <div class="row">
@@ -94,7 +94,7 @@
         <div class="cool" id="cooldown">cooldown: —</div>
         <div class="jackpot" id="jackpot">💥 JACKPOT! Finality Achieved 💥</div>
         <div class="slotbox">
-          <div class="marquee">Spin the reels — settle on‑chain</div>
+          <div class="marquee">Spin the reels — settle on-chain</div>
           <div class="reels" id="reels">
             <div class="reel"><div class="window" id="reel0"></div><div class="overlay"></div></div>
             <div class="reel"><div class="window" id="reel1"></div><div class="overlay"></div></div>
@@ -129,7 +129,7 @@
             <input id="tip" type="number" min="0" step="0.0001" placeholder="0.0" />
           </div>
           <div style="flex:1">
-            <label>Casino Shout (on‑chain message)</label>
+            <label>Casino Shout (on-chain message)</label>
             <input id="message" type="text" placeholder="Hit the jackpot!" />
           </div>
         </div>
@@ -212,7 +212,7 @@
     const contractAddrInput = $('#contractAddr');
     const contractSelect = $('#contractSelect');
     const useSelectedBtn = $('#useSelected');
-    the_addrLink = $('#addrLink');
+    const addrLink = $('#addrLink');
     const saveAddrBtn = $('#saveAddr');
     const messageInput = $('#message');
     const tipInput = $('#tip');
@@ -259,7 +259,7 @@
       return true;
     }
 
-    function updateAddrLink(a){ the_addrLink.href = `${MONAD.blockExplorer}/address/${a}`; }
+    function updateAddrLink(a){ addrLink.href = `${MONAD.blockExplorer}/address/${a}`; }
 
     useSelectedBtn.onclick = ()=>{ setContractAddress(contractSelect.value); };
 
@@ -408,11 +408,7 @@
 
     // Auto setup
     populateContracts();
-    if(window.ethereum){
-      initProviderAndSigner().then(()=>{
-        window.ethereum.request({ method: 'eth_accounts' }).then(accs=>{ if(accs?.length){ btnConnect.textContent='✅ Connected'; tryInitContract(); pollStats(); } });
-      }).catch(()=>{});
-    }
+    // Do not auto request accounts on load to avoid popups; just populate UI.
   </script>
 </body>
 </html>
